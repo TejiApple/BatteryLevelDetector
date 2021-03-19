@@ -2,6 +2,8 @@ package com.example.batteryleveldetector;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.OnLifecycleEvent;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private String[] mStringArray = null;
     private ArrayAdapter<String> arrayAdapter;
     private ListView lvList;
-    int mProgressStatus;
+    int mProgressStatus, level;
+    int currentHourIn24Format, currentMinute, mSec;
 
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -42,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
             mTextViewInfo.setText("Battery Scale : " + scale);
 
-            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL,-1);
+            level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL,-1);
             mTextViewInfo.setText(mTextViewInfo.getText() + "\nBattery Level : " + level);
 
             float percentage = level/ (float) scale;
@@ -61,6 +65,11 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setDisplayShowCustomEnabled(true);
         getSupportActionBar().setCustomView(R.layout.custom_action_bar);
+
+        Calendar currentTime = Calendar.getInstance();
+        currentHourIn24Format = currentTime.get(Calendar.HOUR_OF_DAY);
+        currentMinute = currentTime.get(Calendar.MINUTE);
+        mSec = currentTime.get(Calendar.MILLISECOND);
 
         Context mContext = getApplicationContext();
         IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
@@ -86,6 +95,38 @@ public class MainActivity extends AppCompatActivity {
         saveToSharedPref(data);
 
     }
+    @Override
+    protected void onResume(){
+        super.onResume();
+
+        String onResume = "onResume";
+        int batPer = level;
+        int timeH = currentHourIn24Format;
+        int timeM = currentMinute;
+        int timeMS = mSec;
+        String resume = onResume + "\n" + timeH + ":" + timeM + ":" + timeMS + "\n" + batPer +"%";
+        saveToSharedPref(resume);
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        String onPause = "onPause";
+        int batPer = level;
+        int timeH = currentHourIn24Format;
+        int timeM = currentMinute;
+        int timeMS = mSec;
+        String pause = onPause + "\n" + timeH + ":" + timeM + ":" + timeMS + "\n" + batPer + "%";
+        saveToSharedPref(pause);
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        String onDestroy = "onDestroy";
+        String destroy = onDestroy;
+        saveToSharedPref(destroy);
+    }
 
     private void saveToSharedPref(List<String> wholeData){
         Gson gson = new Gson();
@@ -95,18 +136,6 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("MGA_AKLAT", wholeDataString);
         editor.apply();
     }
-
-    public void onBatteryOk(View view){
-
-        String ok = "SAVED!!!";
-        saveToSharedPref(ok);
-    }
-    public void onBatteryLow(View view){
-
-        String diOk = "HINDI NA SAVED!!!";
-        saveToSharedPref(diOk);
-    }
-
     private void saveToSharedPref(String book){
         Gson gson = new Gson();
 
